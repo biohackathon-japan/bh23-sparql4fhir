@@ -1,54 +1,72 @@
 ---
-title: 'BioHackJP 2023 Report R1: linked data standardization with LLMs'
-title_short: 'BioHackJP 2023 LD-LLM'
+title: 'BioHackJP 2023 Report R4: Enabling SPARQL queries over conventional medical records'
+title_short: 'BioHackJP 2023 FHIR SPARQL'
 tags:
+  - SPARQL
+  - FHIR
   - Linked Data
-  - Large Language Models
+  - Data Integration
+  - RDF
 authors:
-  - name: First Author
-    orcid: 0000-0000-0000-0000
+  - name: Eric Prud'hommeaux
+    orcid: 0000-0003-1775-9921
     affiliation: 1
-  - name: Last Author
-    orcid: 0000-0000-0000-0000
+  - name: Claude Nanjo
+    orcid: 0009-0002-1208-8858
     affiliation: 2
+  - name: Jerven Bolleman
+    orcid: 0000-0002-7449-1266
+    affiliation: 3
 affiliations:
-  - name: First Affiliation
+  - name: Janeiro Digital
     index: 1
-  - name: Second Affiliation
+  - name: Medontology LLC
     index: 2
+  - name: SIB Swiss Institute of Bioinformatics
+    index: 3
 date: 30 June 2023
 cito-bibliography: paper.bib
 event: BH23JP
 biohackathon_name: "BioHackathon Japan 2023"
 biohackathon_url:   "https://2023.biohackathon.org/"
 biohackathon_location: "Kagawa, Japan, 2023"
-group: R1
+group: R4
 # URL to project git repo --- should contain the actual paper.md:
-git_url: https://github.com/biohackathon-jp/bh23-report-template
+git_url: https://github.com/biohackathon-japan/bh23-sparql4fhir/tree/main/paper
 # This is the short authors description that is used at the
 # bottom of the generated paper (typically the first two authors):
-authors_short: First Author \emph{et al.}
+authors_short: Eric Prud'hommeaux \emph{et al.}
 ---
 
 # Background
 
-The field of bioinformatics plays a crucial role in enabling researchers to extract meaningful insights from the vast amount of biological data generated today. With advancements in technology and the availability of large-scale datasets, it has become increasingly important to develop standardized approaches for representing and integrating biological information. Linked data, a method for publishing structured data on the web, has emerged as a promising solution for facilitating the integration and interoperability of diverse biological data sources.
+HL7 FHIR is a global standard for accessing and sharing electronic medical records in secure environments. FHIR has its own custom query language called FHIR Path. FHIR Data has been available as RDF since release R2, and reached tech maturity level 3 but is not yet normative. FHIR RDF is supported by a number of FHIR platforms.
 
-The BioHackathon 2023, held in Japan, provided an ideal platform for researchers and bioinformatics enthusiasts to collaborate and explore innovative solutions to address the challenges in the field. Our project focused on the application of Linked Data and Large Language Models (LLMs) to standardize biological data and enhance its accessibility and usability.
+## Vision
 
-LLMs, such as OpenAI's GPT-3.5 architecture, have demonstrated remarkable capabilities in understanding and generating human-like text. Leveraging the power of LLMs, we aimed to automate the process of extracting relevant biological terms from unstructured text and mapping them to existing ontology terms. Ontologies, which are hierarchical vocabularies of terms and their semantic relationships, provide a standardized framework for organizing and categorizing biological concepts.
+Every single clinical system that has a FHIR compliant datastore will be able to allow access to this data using SPARQL. Leveraging their existing infrastructure and security systems, while giving researchers and medical staff the capability for analytical queries that are outside of the design sweetspot of FHIR Path. 
+
+# Goals
+
+While FHIR RDF is already a very practical standard to use. The most common way to query data in RDF sources is called SPARQL. Loading all data from an existing FHIR Source and loading it into a separate SPARQL capable database is not ideal. For reasons of security and data freshness.
+
+We aimed to translate SPARQL to FHIR PATH syntax. This works only for a small subset of SPARQL as the query languages are quite different in their expressive power. Therefore we aimed to use an existing SPARQL engine and use its evaluation strategy to ensure correct SPARQL semantics. Doing this we will maintain all options for an as efficient as possible retrieval strategy from FHIR PATH capable datastores. Including filter pushdown and constant bindings.  
 
 # Outcomes
 
-To achieve our objectives, we conducted a comprehensive survey of open source language models available and evaluated their suitability for our task. We explored different models, taking into consideration factors such as performance, computational requirements, and ease of deployment. Subsequently, we sought to run the selected models on a local computer, ensuring that the infrastructure requirements were met.
+We have a working prototype that allows for SPARQL queries matching the FHIR RDF R5 specification to be answered by a standard SPARQL protocol compliant endpoint. This includes general SPARQL optimisations but also pattern recognition. 
 
-Having established a working environment for LLMs, we developed a set of pipelines that incorporated various natural language processing techniques to extract relevant biological terms from textual data. These terms were then matched and mapped to the corresponding ontology terms, thereby providing a standardized representation of the extracted information. By utilizing Linked Data principles, we aimed to create an interconnected network of biological knowledge that would facilitate data integration and enable advanced analysis.
+The engine chosen for this project is the Apache Jena’s ARQ engine. In this engine architecture we only need to replace standard parts of the SPARQL algebra with specific operators that we call HapiOps. HapiOps: use the hapi java clients for FHIR PATH over REST to talk to a FHIR data resource. HapiOps are the glue between the standard Jena SPARQL engine evaluation and the FHIR Path query language. Using the FHIR REST client as the base for our implementation means that this SPARQL engine can use any compliant FHIR data resource.
+
+The code recognizing which SPARQL fragments can be mapped to a FHIR Path query was derived from the FHIR RDF ShEx data shapes. Originally evaluated in JS this has been translated into Java. The concept of the translation is based on ArcTrees. TODO: explain by Eric.
 
 ![Caption for BioHackrXiv logo figure](./biohackrxiv.png)
 
 # Future work
 
-Moving forward, there are several areas of potential future work to enhance our project's linked data standardization with LLMs. First, exploring advanced LLMs and optimizing computational efficiency can improve performance. Additionally, expanding ontology mapping to cover more domains and integrating external data sources would increase the scope of our standardization efforts. Validating and evaluating results against gold-standard datasets, involving domain experts, and developing a user-friendly interface for researchers to interact with the pipelines are crucial next steps. These future endeavors will refine and advance our methodology, increasing its impact and adoption in bioinformatics.
+We currently do not push down SPARQL filters into the where clauses of the FHIR Path. The code that manages the conversion of FHIR Path result bundles into SPARQL result sets are far from ideal in respect to long term performance. Significant testing to ensure that no FHIR concepts have been forgotten or mistranslated. 
+
+SPARQL and OWL allow completing FHIR path result queries when using coding systems that have logical extensions such as Snomed CT and LOINC. E.g. querying for a more general LOINC code should retrieve all observations coded with a more specific child LOINC code. Efficient implementation of the consequences of OWL derived query rewriting into FHIR Path is an open issue that needs more development efforts.
 
 ## Acknowledgements
 
