@@ -48,16 +48,16 @@ Medical information is often stored within closed proprietary system as semistru
 
 By allowing the retrieval of clinical information using common semantic web technologies such as SPARQL, researchers will be able to use familiar tooling to integrate clinical information with their existing knowledgebases. FHIR offers a method to return clinical data in RDF format. However, it currently does not support SPARQL - a common way to query RDF data. As a result, to support a SPARQL query interface often requires loading all needed data from an existing FHIR Source into a separate SPARQL-capable database. This approach is undesirable for reasons of security and data freshness. SPARQL support allows organizations to provide researchers and health data integrators the capability for analytical queries that are outside of the design sweetspot of FHIR while leveraging their existing health IT infrastructure and security systems. 
 
+# Goals
+
 ## Vision
 
 To enable SPARQL support in existing FHIR-enabled clinical systems. 
 
-# Goals
-
 * Stand up a SPARQL endpoint
-* Translate the incoming SPARQL query into a valid query against the FHIR API. 
-* Return a valid SPARQL result set
-* Operate solely against the FHIR search API thus decoupling queries from the persistence layer as various configurations may exist within health systems.
+* Construct a valid FHIR query from the incoming SPARQL query.
+* Execute the FHIR query and transform the results into a valid SPARQL result set
+* Operate solely against the FHIR search API thus decoupling queries from the persistence layer as various persistence configurations may exist within health systems.
 
 # Outcomes
 
