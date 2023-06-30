@@ -58,13 +58,17 @@ We have a working prototype that allows for SPARQL queries matching the FHIR RDF
 
 The engine chosen for this project is the Apache Jena’s ARQ engine. In this engine architecture we only need to replace standard parts of the SPARQL algebra with specific operators that we call HapiOps. HapiOps: use the hapi java clients for FHIR PATH over REST to talk to a FHIR data resource. HapiOps are the glue between the standard Jena SPARQL engine evaluation and the FHIR Path query language. Using the FHIR REST client as the base for our implementation means that this SPARQL engine can use any compliant FHIR data resource.
 
-The code recognizing which SPARQL fragments can be mapped to a FHIR Path query was derived from the FHIR RDF ShEx data shapes. Originally evaluated in JS this has been translated into Java. The concept of the translation is based on ArcTrees. TODO: explain by Eric.
+## Query manipulation with ArcTrees
+
+The code recognizing which SPARQL fragments can be mapped to a FHIR Path query was derived from the FHIR RDF ShEx data shapes. Originally evaluated in JS this has been translated into Java.
+
+The SPARQL algebra includes triple patters and path patterns. While technically, intersesction of the variables in the subject and object positions express a graph, the data model being queried is a sparsely-interlinked tree. The FHIR Path queries which allow efficient selection and transformation of remote data are defined as paths from a FHIR Resource's root node. Expressing the SPARQL query as a tree (called "ArcTree") with some interconnecting variables provided a structure homologous to FHIR Path's tree path expressions. This enabled the recognition of all applicable paths, i.e. those that correspond to the SPARQL query and have values that are either constants in the SPARQL query or variables already bound by an earlier join.
 
 ![Caption for BioHackrXiv logo figure](./biohackrxiv.png)
 
 # Future work
 
-We currently do not push down SPARQL filters into the where clauses of the FHIR Path. The code that manages the conversion of FHIR Path result bundles into SPARQL result sets are far from ideal in respect to long term performance. Significant testing to ensure that no FHIR concepts have been forgotten or mistranslated. 
+As with any database query, there is a long tail of possible optimizations. For instance, we could push down SPARQL filters into the where clauses of the FHIR Path. The code that manages the conversion of FHIR Path result bundles into SPARQL result sets are far from ideal in respect to long term performance. Significant testing to ensure that no FHIR concepts have been forgotten or mistranslated. 
 
 SPARQL and OWL allow completing FHIR path result queries when using coding systems that have logical extensions such as Snomed CT and LOINC. E.g. querying for a more general LOINC code should retrieve all observations coded with a more specific child LOINC code. Efficient implementation of the consequences of OWL derived query rewriting into FHIR Path is an open issue that needs more development efforts.
 
