@@ -54,36 +54,45 @@ By allowing the retrieval of clinical information using common semantic web tech
 
 To enable SPARQL support in existing FHIR-enabled clinical systems. 
 
-* Stand up a SPARQL endpoint
+## Objectives
+
+* Stand up a SPARQL endpoint that is decoupled from the FHIR endpoint.
 * Construct a valid FHIR query from the incoming SPARQL query.
-* Execute the FHIR query and transform the results into a valid SPARQL result set
+* Execute the FHIR query against a HAPI FHIR endpoint and transform the results into a valid SPARQL result set
 * Operate solely against the FHIR search API thus decoupling queries from the persistence layer as various persistence configurations may exist within health systems.
 
 # Outcomes
 
-[TODO Integrate this text here: This works only for a small subset of SPARQL as the query languages are quite different in their expressive power. Therefore we aimed to use an existing SPARQL engine and use its evaluation strategy to ensure correct SPARQL semantics. Doing this we will maintain all options for an as efficient as possible retrieval strategy from FHIR PATH capable datastores. Including filter pushdown and constant bindings.  ]
+We have implemented a working prototype that allows for SPARQL queries matching the FHIR RDF R5 specification to be answered by a standard SPARQL protocol compliant endpoint. This includes general SPARQL optimisations but also pattern recognition. 
 
-We have a working prototype that allows for SPARQL queries matching the FHIR RDF R5 specification to be answered by a standard SPARQL protocol compliant endpoint. This includes general SPARQL optimisations but also pattern recognition. 
+The engine chosen for this project is the Apache Jena’s ARQ engine. In this engine architecture we only need to replace standard parts of the SPARQL algebra with specific operators that we call HapiOps. HapiOps: use the hapi java clients for FHIR calls over REST to talk to a FHIR-enabled data repository. HapiOps are the glue between the standard Jena SPARQL engine evaluation and the FHIR Path query language. Using the FHIR REST client as the base for our implementation means that this SPARQL engine can use any compliant FHIR data resource.
 
-The engine chosen for this project is the Apache Jena’s ARQ engine. In this engine architecture we only need to replace standard parts of the SPARQL algebra with specific operators that we call HapiOps. HapiOps: use the hapi java clients for FHIR PATH over REST to talk to a FHIR data resource. HapiOps are the glue between the standard Jena SPARQL engine evaluation and the FHIR Path query language. Using the FHIR REST client as the base for our implementation means that this SPARQL engine can use any compliant FHIR data resource.
+Given differences in the expressive power of the query languages, the proposed approach only works for a small subset of SPARQL queries at this time. We aimed to use an existing SPARQL engine and its evaluation strategy to ensure correct SPARQL semantics. Doing this will maintain all options for an as efficient as possible retrieval strategy from FHIR-capable datastores, including filter pushdown and constant bindings.
 
 ## Query manipulation with ArcTrees
 
 The code recognizing which SPARQL fragments can be mapped to a FHIR Path query was derived from the FHIR RDF ShEx data shapes. Originally evaluated in JS this has been translated into Java.
 
-The SPARQL algebra includes triple patters and path patterns. While technically, intersesction of the variables in the subject and object positions express a graph, the data model being queried is a sparsely-interlinked tree. The FHIR Path queries which allow efficient selection and transformation of remote data are defined as paths from a FHIR Resource's root node. Expressing the SPARQL query as a tree (called "ArcTree") with some interconnecting variables provided a structure homologous to FHIR Path's tree path expressions. This enabled the recognition of all applicable paths, i.e. those that correspond to the SPARQL query and have values that are either constants in the SPARQL query or variables already bound by an earlier join.
+The SPARQL algebra includes triple patterns and path patterns. While technically, intersection of the variables in the subject and object positions express a graph, the data model being queried is a sparsely-interlinked tree. The FHIR queries which allow efficient selection and transformation of remote data are defined as paths from a FHIR Resource's root node. Expressing the SPARQL query as a tree (called an "ArcTree") with some interconnecting variables provides a structure homologous to FHIR Path's tree path expressions. This enables the recognition of all applicable paths, i.e. those that correspond to the SPARQL query and have values that are either constants in the SPARQL query or variables already bound by an earlier join.
 
 ![Caption for BioHackrXiv logo figure](./biohackrxiv.png)
 
 # Future work
 
-As with any database query, there is a long tail of possible optimizations. For instance, we could push down SPARQL filters into the where clauses of the FHIR Path. The code that manages the conversion of FHIR Path result bundles into SPARQL result sets are far from ideal in respect to long term performance. Significant testing to ensure that no FHIR concepts have been forgotten or mistranslated. 
+The approach taken during this biohackathon has focused on executing modestly expressive SPARQL queries against a FHIR endpoint in order to demonstrate feasibility and identify potential complexities. However, we recognize that for this approach to be viable, as with any database query, there is a long tail of possible optimizations and refinements. For instance: 
 
-SPARQL and OWL allow completing FHIR path result queries when using coding systems that have logical extensions such as Snomed CT and LOINC. E.g. querying for a more general LOINC code should retrieve all observations coded with a more specific child LOINC code. Efficient implementation of the consequences of OWL derived query rewriting into FHIR Path is an open issue that needs more development efforts.
+* Our approach only works for a small subset of SPARQL queries such as SPARQL queries that clearly specify a single focal resource whose rdf:type is established. We aim to support a broader set of more general queries in the future.
+* We have defined a limited number of patterns to map SPARQL query constructs to FHIR. Additional patterns will be added in the future.
+* FHIR query results are currently handled in memory and the implementation of result set paging has been deferred.
+* The fetching of references has not been implemented at this time (e.g., fetching the subject of a clinical observation such as a Patient resource). While support for fetching referenced resources does not pose a technical challenge for small result sets per se, properly managing this process for paged result sets presents some important challenges. 
+* SPARQL query processing currently makes use of the Jena library. Yet, accumulating and processing large FHIR result sets (Bundles) in memory can be expensive. To mitigate this challenge, we could 'push down' SPARQL filters into the where-clauses of the constructed FHIR query. Thus, the conversion of FHIR query result bundles into SPARQL result sets will lead to performance issues for large result sets.
+* SPARQL and OWL allow completing FHIR result queries when using coding systems that have logical extensions such as Snomed CT and LOINC. E.g. querying for a more general LOINC code should retrieve all observations coded with a more specific child LOINC code. Efficient implementation of the consequences of OWL derived query rewriting into FHIR Path is an open issue that needs more development efforts.
+
+Given the exploratory nature of this investigation, we anticipate further investigation and significant testing to ensure better coverage over time, both in the expressivity of SPARQL queries against FHIR repositories and in the number of FHIR query patterns that can be supported by such an approach.
 
 ## Acknowledgements
 
-We would like to thank the fellow participants at BioHackathon 2023 for their collaboration and constructive advice, which greatly influenced our project. We are grateful to the organizers for providing this platform and the developers of open source language models. Special thanks to our mentors, advisors, and colleagues for their guidance and support. Without their contributions, our project in linked data standardization with LLMs in bioinformatics would not have been possible.
+We would like to thank the fellow participants at BioHackathon 2023 for their collaboration and constructive input, all of which greatly contributed to the success of this effort. We are especially grateful to the organizers at DBCLS for fostering an amazing environment for knowledge sharing and innovation. We would also like to thank the developers of open source platforms such as Jena and HAPI FHIR that have played a key role in the faster adoption of standards and innovation in the healthcare space. Special thanks to our mentors, advisors, and colleagues for their guidance and support.
 
 ## References
 
