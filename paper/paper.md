@@ -40,19 +40,28 @@ authors_short: Eric Prud'hommeaux \emph{et al.}
 
 # Background
 
-HL7 FHIR is a global standard for accessing and sharing electronic medical records in secure environments. FHIR has its own custom query language called FHIR Path. FHIR Data has been available as RDF since release R2, and reached tech maturity level 3 but is not yet normative. FHIR RDF is supported by a number of FHIR platforms.
+HL7 FHIR is a global standard for accessing and sharing electronic medical records in secure environments. In recent years, FHIR has gained broader adoption among health IT and the major Electronic Health Record (EHR) system vendors. FHIR defines a metamodel, a core clinical model, and a resource-oriented RESTful API for querying FHIR repositories. FHIR also defines a path language called FHIR Path that can be used to filter and project the results of FHIR queries. FHIR Data has been available as RDF since release R2, and reached tech maturity level 3 but is not yet normative. FHIR RDF is supported by a number of FHIR platforms and by the HAPI FHIR library.
+
+## Motivation
+
+Medical information is often stored within closed proprietary system as semistructured data. Yet, access to medical information in a structured, standard and interoperable format is key to promoting innovation in medicine, science, and health information technology. This is especially apparent in the area of translational medicine where discoveries in biotechnology have the potential to impact medicine in significant ways. 
+
+By allowing the retrieval of clinical information using common semantic web technologies such as SPARQL, researchers will be able to use familiar tooling to integrate clinical information with their existing knowledgebases. FHIR offers a method to return clinical data in RDF format. However, it currently does not support SPARQL - a common way to query RDF data. As a result, to support a SPARQL query interface often requires loading all needed data from an existing FHIR Source into a separate SPARQL-capable database. This approach is undesirable for reasons of security and data freshness. SPARQL support allows organizations to provide researchers and health data integrators the capability for analytical queries that are outside of the design sweetspot of FHIR while leveraging their existing health IT infrastructure and security systems. 
 
 ## Vision
 
-Every single clinical system that has a FHIR compliant datastore will be able to allow access to this data using SPARQL. Leveraging their existing infrastructure and security systems, while giving researchers and medical staff the capability for analytical queries that are outside of the design sweetspot of FHIR Path. 
+To enable SPARQL support in existing FHIR-enabled clinical systems. 
 
 # Goals
 
-While FHIR RDF is already a very practical standard to use. The most common way to query data in RDF sources is called SPARQL. Loading all data from an existing FHIR Source and loading it into a separate SPARQL capable database is not ideal. For reasons of security and data freshness.
-
-We aimed to translate SPARQL to FHIR PATH syntax. This works only for a small subset of SPARQL as the query languages are quite different in their expressive power. Therefore we aimed to use an existing SPARQL engine and use its evaluation strategy to ensure correct SPARQL semantics. Doing this we will maintain all options for an as efficient as possible retrieval strategy from FHIR PATH capable datastores. Including filter pushdown and constant bindings.  
+* Stand up a SPARQL endpoint
+* Translate the incoming SPARQL query into a valid query against the FHIR API. 
+* Return a valid SPARQL result set
+* Operate solely against the FHIR search API thus decoupling queries from the persistence layer as various configurations may exist within health systems.
 
 # Outcomes
+
+[TODO Integrate this text here: This works only for a small subset of SPARQL as the query languages are quite different in their expressive power. Therefore we aimed to use an existing SPARQL engine and use its evaluation strategy to ensure correct SPARQL semantics. Doing this we will maintain all options for an as efficient as possible retrieval strategy from FHIR PATH capable datastores. Including filter pushdown and constant bindings.  ]
 
 We have a working prototype that allows for SPARQL queries matching the FHIR RDF R5 specification to be answered by a standard SPARQL protocol compliant endpoint. This includes general SPARQL optimisations but also pattern recognition. 
 
