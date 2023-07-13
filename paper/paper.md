@@ -20,7 +20,7 @@ authors:
 affiliations:
   - name: Janeiro Digital
     index: 1
-  - name: Medontology LLC
+  - name: University of Utah
     index: 2
   - name: SIB Swiss Institute of Bioinformatics
     index: 3
@@ -65,7 +65,7 @@ To enable SPARQL support in existing FHIR-enabled clinical systems.
 
 We have implemented a working prototype that allows for SPARQL queries matching the FHIR RDF R5 specification to be answered by a standard SPARQL protocol compliant endpoint. This includes general SPARQL optimisations but also pattern recognition. 
 
-The engine chosen for this project is the Apache Jena’s ARQ engine. In this engine architecture we only need to replace standard parts of the SPARQL algebra with specific operators that we call HapiOps. HapiOps: use the hapi java clients for FHIR calls over REST to talk to a FHIR-enabled data repository. HapiOps are the glue between the standard Jena SPARQL engine evaluation and the FHIR Path query language. Using the FHIR REST client as the base for our implementation means that this SPARQL engine can use any compliant FHIR data resource.
+The engine chosen for this project is the Apache Jena’s ARQ engine. In this engine architecture we only need to replace standard parts of the SPARQL algebra with specific operators that we call HapiOps. HapiOps use the hapi java clients for FHIR calls over REST to talk to a FHIR-enabled data repository. HapiOps are the glue between the standard Jena SPARQL engine evaluation and the FHIR query language. Using the FHIR REST client as the base for our implementation means that this SPARQL engine can use any compliant FHIR data resource.
 
 Given differences in the expressive power of the query languages, the proposed approach only works for a small subset of SPARQL queries at this time. We aimed to use an existing SPARQL engine and its evaluation strategy to ensure correct SPARQL semantics. Doing this will maintain all options for an as efficient as possible retrieval strategy from FHIR-capable datastores, including filter pushdown and constant bindings.
 
@@ -74,8 +74,6 @@ Given differences in the expressive power of the query languages, the proposed a
 The code recognizing which SPARQL fragments can be mapped to a FHIR Path query was derived from the FHIR RDF ShEx data shapes. Originally evaluated in JS this has been translated into Java.
 
 The SPARQL algebra includes triple patterns and path patterns. While technically, intersection of the variables in the subject and object positions express a graph, the data model being queried is a sparsely-interlinked tree. The FHIR queries which allow efficient selection and transformation of remote data are defined as paths from a FHIR Resource's root node. Expressing the SPARQL query as a tree (called an "ArcTree") with some interconnecting variables provides a structure homologous to FHIR Path's tree path expressions. This enables the recognition of all applicable paths, i.e. those that correspond to the SPARQL query and have values that are either constants in the SPARQL query or variables already bound by an earlier join.
-
-![Caption for BioHackrXiv logo figure](./biohackrxiv.png)
 
 # Future work
 
@@ -97,3 +95,5 @@ We would like to thank the fellow participants at BioHackathon 2023 for their co
 ## References
 
 1.
+
+![Caption for BioHackrXiv logo figure](./biohackrxiv.png)
