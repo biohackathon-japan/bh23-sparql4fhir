@@ -94,4 +94,6 @@ We would like to thank the fellow participants at BioHackathon 2023 for their co
 
 ## References
 
+1. HAPI FHIR, <https://hapifhir.io>.
+2. Health Level 7, Fast Health Interoperability Resources (FHIR) Standard Specification, <https://fhir.org>.
 
