@@ -44,9 +44,11 @@ HL7 FHIR is a global standard for accessing and sharing electronic medical recor
 
 ## Motivation
 
-Medical information is often stored within closed proprietary system as semistructured data. Yet, access to medical information in a structured, standard and interoperable format is key to promoting innovation in medicine, science, and health information technology. This is especially apparent in the area of translational medicine where discoveries in biotechnology have the potential to impact medicine in significant ways. 
+Medical information is often stored within closed proprietary system as semistructured data. Yet, access to medical information in a structured, standard and interoperable format is key to promoting innovation in medicine, science, and health information technology. This is especially apparent in the area of translational medicine where discoveries in biotechnology have the potential to impact medicine in significant ways.
 
-By allowing the retrieval of clinical information using common semantic web technologies such as SPARQL, researchers will be able to use familiar tooling to integrate clinical information with their existing knowledgebases. FHIR offers a method to return clinical data in RDF format. However, it currently does not support SPARQL - a common way to query RDF data. As a result, to support a SPARQL query interface often requires loading all needed data from an existing FHIR Source into a separate SPARQL-capable database. This approach is undesirable for reasons of security and data freshness. SPARQL support allows organizations to provide researchers and health data integrators the capability for analytical queries that are outside of the design sweetspot of FHIR while leveraging their existing health IT infrastructure and security systems. 
+There is a minimal query language called FHIR path with adhoc semantics to access data coded using FHIR standards. There are many kinds queries of clinical interest that can not be formulated in a single FHIR path search, which is why FHIR path requires researchers to over fetch data into their analytics pipelines and write joins and other basic relational operators.
+
+By allowing the retrieval of clinical information using common semantic web technologies such as SPARQL, researchers will be able to use familiar tooling to integrate clinical information with their existing knowledgebases. FHIR offers a method to return clinical data in RDF format. However, FHIR does not specificy SPARQL support. SPARQL is a generic W3C standardized query language that is compared to FHIR path in wider use. To provide a SPARQL query interface at this time requires loading all needed data from an existing FHIR data source into a separate SPARQL-capable database. This approach is undesirable for reasons of security and data freshness. SPARQL support allows organizations to provide researchers and health data integrators the capability for analytical queries that are outside of the design sweetspot of FHIR query while leveraging their existing health IT infrastructure and security systems. 
 
 # Goals
 
@@ -57,8 +59,8 @@ To enable SPARQL support in existing FHIR-enabled clinical systems.
 ## Objectives
 
 * Stand up a SPARQL endpoint that is decoupled from the FHIR endpoint.
-* Construct a valid FHIR query from the incoming SPARQL query.
-* Execute the FHIR query against a HAPI FHIR endpoint and transform the results into a valid SPARQL result set
+* Construct a valid FHIR path query from the incoming SPARQL query.
+* Execute the FHIR path query against a HAPI FHIR endpoint and transform the results into a valid SPARQL result set
 * Operate solely against the FHIR search API thus decoupling queries from the persistence layer as various persistence configurations may exist within health systems.
 
 # Outcomes
@@ -67,7 +69,13 @@ We have implemented a working prototype that allows for SPARQL queries matching 
 
 The engine chosen for this project is the Apache Jena’s ARQ engine. In this engine architecture we only need to replace standard parts of the SPARQL algebra with specific operators that we call HapiOps. HapiOps use the hapi java clients for FHIR calls over REST to talk to a FHIR-enabled data repository. HapiOps are the glue between the standard Jena SPARQL engine evaluation and the FHIR query language. Using the FHIR REST client as the base for our implementation means that this SPARQL engine can use any compliant FHIR data resource.
 
-Given differences in the expressive power of the query languages, the proposed approach only works for a small subset of SPARQL queries at this time. We aimed to use an existing SPARQL engine and its evaluation strategy to ensure correct SPARQL semantics. Doing this will maintain all options for an as efficient as possible retrieval strategy from FHIR-capable datastores, including filter pushdown and constant bindings.
+Given differences in the expressive power of the query languages, the proposed approach only works for a large subset of SPARQL queries at this time. We extended an existing SPARQL engine and its evaluation strategy to ensure correct SPARQL semantics and evaluation. This maintains all options for an as efficient as possible retrieval strategy from FHIR-capable datastores, including filter pushdown and constant bindings. There are two kinds of SPARQL queries that currently are not executable.
+
+1.  Queries without bound variables.
+    * This would be a query like "return all the FHIR coded data as triples". While trivial to implement, the functionality is already provided by the FHIR API, so not critical for the use case. 
+2.  Concepts not recognizable by ArcTrees
+    * A query might only have a bound variable that identifies a specific data instance. e.g. the IRI for a patient but the engine does not currently convert that in to a root for query evaluation.
+    * BIND and VALUES are ways in SPARQL to provide inline data and options in a query. These SPARQL algebra constructs are not yet investigated for ArcTree generation. 
 
 ## Query manipulation with ArcTrees
 
@@ -77,16 +85,16 @@ The SPARQL algebra includes triple patterns and path patterns. While technically
 
 # Future work
 
-The approach taken during this biohackathon has focused on executing modestly expressive SPARQL queries against a FHIR endpoint in order to demonstrate feasibility and identify potential complexities. However, we recognize that for this approach to be viable, as with any database query, there is a long tail of possible optimizations and refinements. For instance: 
+The approach taken during this biohackathon has focused on executing modestly expressive SPARQL queries against a FHIR endpoint in order to demonstrate feasibility and identify potential complexities. However, we recognize that for this approach to be economically viable, as with any database query, there is a long tail of possible optimizations and refinements. For instance: 
 
-* Our approach only works for a small subset of SPARQL queries such as SPARQL queries that clearly specify a single focal resource whose rdf:type is established. We aim to support a broader set of more general queries in the future.
+* Our approach only works for a the subset of SPARQL queries such as SPARQL queries that clearly specify a single focal resource whose rdf:type is established. We aim to support a broader set of more general queries in the future.
 * We have defined a limited number of patterns to map SPARQL query constructs to FHIR. Additional patterns will be added in the future.
 * FHIR query results are currently handled in memory and the implementation of result set paging has been deferred.
 * The fetching of references has not been implemented at this time (e.g., fetching the subject of a clinical observation such as a Patient resource). While support for fetching referenced resources does not pose a technical challenge for small result sets per se, properly managing this process for paged result sets presents some important challenges. 
-* SPARQL query processing currently makes use of the Jena library. Yet, accumulating and processing large FHIR result sets (Bundles) in memory can be expensive. To mitigate this challenge, we could 'push down' SPARQL filters into the where-clauses of the constructed FHIR query. Thus, the conversion of FHIR query result bundles into SPARQL result sets will lead to performance issues for large result sets.
+* SPARQL query processing currently makes use of the Jena library. Yet, accumulating and processing large FHIR result sets (Bundles) in memory can be expensive. To mitigate this challenge, we should 'push down' SPARQL filters into the where-clauses of the constructed FHIR query. Currently the conversion of FHIR query result bundles into SPARQL result sets will lead to performance issues for large result sets.
 * SPARQL and OWL allow completing FHIR result queries when using coding systems that have logical extensions such as Snomed CT and LOINC. E.g. querying for a more general LOINC code should retrieve all observations coded with a more specific child LOINC code. Efficient implementation of the consequences of OWL derived query rewriting into FHIR Path is an open issue that needs more development efforts.
 
-Given the exploratory nature of this investigation, we anticipate further investigation and significant testing to ensure better coverage over time, both in the expressivity of SPARQL queries against FHIR repositories and in the number of FHIR query patterns that can be supported by such an approach.
+Given the exploratory nature of this investigation, we anticipate further investigation and significant testing to ensure better coverage, both in the expressivity of SPARQL queries against FHIR repositories and in the number of FHIR query patterns that can be supported by such an approach.
 
 ## Acknowledgements
 
